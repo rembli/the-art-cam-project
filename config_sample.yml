@@ -7,6 +7,6 @@ DEV:
 
   
 PRD:
-  MONGO_URI: "mongodb://admin:z4nzVa7XXh@192.168.2.248:27017/art?authSource=admin"
+  MONGO_URI: "mongodb://admin:123@192.1.1.1:27017/art?authSource=admin"
   
 
