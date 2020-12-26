@@ -1,5 +1,5 @@
-config.yml
 .gitignore
+config.yml
 run.bat
 readme.txt
 docker-notes.txt
