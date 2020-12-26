@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>kunst kam</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+    <script type="text/javascript">
+        if (window.location.hostname != "127.0.0.1" && window.location.protocol != "https:") {
+            window.location.replace(`https:${location.href.substring(location.protocol.length)}`);
+        }
+
+        ip = window.localStorage.getItem('ip');
+
+        function update_ip() {
+            window.fetch ("/ip")
+            .then(function(response) {
+                if (response.ok)
+                    return response.text();
+                else
+                    throw new Error("cannot access ip");
+            })
+            .then(function(text) {
+                ip = text;
+                window.localStorage.setItem('ip', ip);
+                return text;
+                //alert (ip)
+            })
+            .catch(function(err) {
+                // alert (err);
+            });
+        }
+        update_ip ();
+
+        function showMessage (message) {
+            msg = document.querySelector("#message_box");
+            msg.style.display = "inline";
+            msg_content = document.querySelector("#message_box_content");
+            msg_content.innerHTML = message;
+        }
+
+        function hideMessage () {
+            msg = document.querySelector("#message_box");
+            msg.style.display = "none";
+        }
+
+    </script>   
+    <style>
+        .nowrap {
+            white-space: nowrap;
+            font-size: 15px; // Added
+            font-size: 3.4vw;  // Added
+        }
+    </style>
+</head>
+
+<body style="font-family:Courier">
+
+    <div class="hero is-primary is-fullheight" style="background-color:white; background-image: url('{{ url_for('static', filename='img/background_rose.jpg') }}');color:#444">
+        
+        <nav class="navbar is-fixed-top" style="background-color:#d8bdb6;box-shadow: 0px 5px 5px #888;">
+        <div class="hero-head">
+            <div class="container" style="padding:1em;">
+                <div>
+                    <div class="container" style="font-size:12pt;color:#444">
+                        <a href="/cam"><b>kunst <i class="fas fa-video"></i></b></a> |
+                        <a href="/gallery">galerie</a> |
+                        <a href="/friends">freunde</a> 
+                    </div>
+                </div>
+            </div>
+        </div>
+        </nav>
+
+        <div id="message_box" class="has-text-centered nowrap" style="background-color:white;align:center;height:100px;display:none">
+            <br><br><br>
+            <div id="message_box_content"></div>
+        </div>
+
+        <div class="hero-body" style="padding-top:0px">
+            <div class="container"  style="align-items: flex-start;">
+                <div class="has-text-centered">
+                    {% block content %}
+                    {% endblock %}
+                </div>
+            </div>        
+        </div>
+
+        <footer class="hero-footer has-text-centered" style="height:75px;background-color:#d8bdb6;color:#444">
+             <br>
+             <a href="/imprint">kunst von <img src="{{ url_for('static', filename='img/gee.png') }}" width="75"> impressum</a>       
+        </footer>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script language="javascript">
+    function delete_post (id) {
+        fetch("/guestbook/"+id, {
+            method: 'delete',
+            headers: {'Content-Type': 'application/json'},
+            body: ""
+        })
+        .then(function(response) {
+            if (response.ok) {
+                console.log ("delete request for post "+id+" was OK");
+                location.reload();
+            }
+            else
+                console.log ("delete request for post "+id+" FAILED");
+        });
+    }
+</script>
+
+<style>
+    a.b {
+        font-weight: bold;
+    }
+</style>
+
+<br><br><br>
+<div class="columns is-multiline is-desktop">
+
+<div class="column is-one-half">
+    <!-- Guestbook -->
+    <label style="font-size:30px;font-weight:bold">Gästebuch</label>
+    <br><br>
+    <div style="text-align:center;color:#444;background-color:white;opacity:0.6">
+        <br>
+        {% for post in guestbook %}
+            <b><i>"{{ post.text }}"</i></b><br>
+            <!--
+            ({{ post.created_on.strftime('%d. %B %Y') }})
+            -->
+            <script language="javascript">
+                if (ip == "{{ post.ip }}") 
+                    document.write ("<a href='javascript:delete_post (&quot;{{ post._id }}&quot;)''><i class='fas fa-trash'></i></a>");
+            </script>
+            <br>
+        {% endfor %}
+    </div>  
+    <div class="column is-one-half" style="text-align:center;color:#444;background-color:white;opacity:0.6">
+        <br>
+        Wir freuen uns, wenn Euch die <b>kunst kam</b> gefällt und lesen gerne von Euren Gedanken und neuen Ideen.<br><br>
+        <form method="POST" action="{{ url_for('guestbook') }}">
+            <textarea class="textarea" name="text" maxlength="512" placeholder="Schreibt uns hier, wie euch die kunst kam und die Werke der Künstler gefallen haben."></textarea><br>
+            <input type="submit" class="button" value="Eintrag absenden">
+        </form>
+        <br>
+    </div>
+</div>
+
+<div class="column is-one-half">
+
+    <!-- Sponsors -->
+    <label style="font-size:30px;font-weight:bold">Sponsoren</label>
+    <br><br>
+
+    <div style="text-align:center;color:#444;background-color:white;opacity:0.6">
+        <br>
+        "Der Künstler lebt nicht nur vom Applaus allein".<br>
+        Für Firmen bietet <a class="b" href="/">kunst kam</a> die  Möglichkeit einen Beitrag zu mehr Schönheit im Sein zu leisten.
+        Kontaktieren Sie uns gerne per E-Mail.<br>
+        <i class="fa fa-envelope"></i> <a class="b" href="mailto:sponsor@kunstkam.de">sponsor@kunstkam.de</a>
+        <br><br>
+    </div>
+    <br>
+
+    <!-- Thanks -->
+    <label style="font-size:30px;font-weight:bold">Danksagung</label>
+    <br><br>
+    <div style="text-align:center;color:#444;background-color:white;opacity:0.6">
+        <br>
+        Auch Softwareentwicklung kann Kunst sein. Mich hat immer der gestalterische Aspekt an Software interessiert.
+        Im betrieblichen Alltag steht durch die "Industrialisierung" leider immer weniger Zeit und Raum für Kreativität zur Verfügung.
+        Jedoch findet sich gerade im Bereich von Open Source Software noch wahnsinnig viel Leidenschaft und Herzblut. 
+        Auch die <a class="b" href="/">kunst kam</a> wäre durch die vielen Einzelbeiträge der Software-Künstler aus aller Welt nicht möglich.
+        Daher soll Ihnen an dieser Stelle ein herzlicher Dank ausgesprochen werden.<br>
+        <br>
+        Die WebSite wurde in Python implementiert mit dem Framework <a class="b" href="https://pgjones.gitlab.io/quart/">Quart</a>. 
+        Für die Oberflächegestaltung wurde <a class="b" href="https://bulma.io/">Bulma</a> verwendet.
+        Die künstlerische Gestaltung der Fotos erfolgt mit einem Verfahren der "künstlichen Intelligenz", dem sogenannten "Neural Style Transfer".
+        Für die Implementierung wurde der Code von <a class="b" href="https://github.com/eriklindernoren/Fast-Neural-Style-Transfer">Erik Linder-Norén</a> auf Basis von PyTorch adaptiert.<br>
+        <br>
+        Auch muss ich den unzähligen Freiwilligen auf <a class="b" href="https://stackoverflow.com/">Stack Overflow</a> einen großen Dank aussprechen. 
+        Ohne deren Beiträge wäre es nicht möglich gewesen, die WebSite an wenigen Sonntag Abenden zu erstellen.<br>
+        <br>
+        Und natürlich muss ich auch meiner Familie danken, die auf mich in der Zeit verzichten musste.
+        <br><br>
+    </div>    
+    <br>
+
+</div>
+
+</div>
+
+{% endblock %}

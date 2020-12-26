@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ### SCRIPT ##################################### -->
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script language="javascript">
+    showMessage ("<a href='/cam'>Jeder kann <b>mitmachen</b>!</a>");
+    
+    var current_image_id = "";
+    var current_image_index = 0;
+    var image_list = [];
+</script>
+
+<!-- ### STYLE ##################################### -->
+
+<style>
+    .image_frame {
+        margin: 10 auto;
+        border: 20px solid #fff;
+        background-color: white;
+        box-shadow: 5px 5px 5px #888;
+    }    
+    .outer_frame {
+        background-image: url('{{ url_for('static', filename='img/frame.jpg') }}');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        position: relative;
+        padding-bottom:100%;
+        width: 100%; 
+        box-shadow: 5px 5px 5px #888;
+    }  
+    .inner_frame {
+        position: absolute;  
+        top: 10%; 
+        left: 10%; 
+        width: 80%; 
+        height: 80%; 
+    }          
+</style>
+
+<!-- ### DIALOG ##################################### -->
+
+<div class="modal present_image_dialog">
+  <div class="modal-background"></div>
+  
+  <div class="modal-content">
+    <a href="javascript:next_image()">
+        <img id="image_canvas" class="image_frame" style="max-height:400px">
+    </a>
+    <br>
+    <button class="button" id="like_button" onClick="javascript:like_image()" style="height:40px"><i class="far fa-thumbs-up"></i></button>
+    <button class="button" id="prev_button" onClick="javascript:prev_image()" style="height:40px"><i class="fas fa-arrow-left"></i></button>
+    <button class="button" id="next_button" onClick="javascript:next_image()" style="height:40px"><i class="fas fa-arrow-right"></i></button>
+    <button class="button" id="download_button" onClick="javascript:download_image()" style="height:40px"><i class="fa fa-download"></i></button>
+    <button class="button" id="share_button" onClick="javascript:share_image()" style="height:40px"><i class="fas fa-share-alt"></i></button>
+  </div>
+  <a href="javascript:close_modal_dialog()">
+     <button class="modal-close is-large" aria-label="close"></button>
+  </a>
+</div>
+
+<!-- ### MAIN ##################################### -->
+<br>
+
+<!--- top images with frame ---> 
+<label style="font-size:30px;font-weight:bold">Beliebte Bilder</label>
+<br>
+
+<div class="columns is-multiline">
+
+    {% for image in images_top %}
+    <div class="column is-one-third">
+        <div class="outer_frame"> 
+            <img class="inner_frame" src="{{ url_for('gallery_image', image_id=image._id) }}"/>
+        </div>
+        <br>
+    </div>
+    {% endfor %}    
+
+</div>
+
+<!--- new images --->
+<label style="font-size:30px;font-weight:bold">Neue Bilder</label>
+<br>
+
+<div class="columns is-multiline">
+
+    {% for image in images_new %}
+        <div class="column is-one-fifth">
+            <a href="javascript: present_image_dialog ('{{image._id}}')" target="_self">
+                <img src="{{ url_for('gallery_image', image_id=image._id) }}" class="image_frame">
+            </a><br>
+            <div id="like_{{ image._id }}" style="display:inline;">
+                <a href='javascript:present_image_dialog (&apos;{{ image._id }}&apos;)'>
+                    <i class="fas fa-thumbs-up"></i>
+                </a> 
+                {{ image.likes }}
+            </div>
+            <script language="javascript">
+                image_list.push ("{{ image._id }}");
+                if (ip == "{{ image.ip }}") 
+                    document.write ("<a href='javascript:delete_image (&quot;{{ image._id }}&quot;)''><i class='fas fa-trash'></i></a>");
+            </script>      
+        </div>
+    {% endfor %}
+
+</div>
+
+<!-- ### SCRIPT ##################################### -->
+
+<script language="javascript">
+    // alert (image_list);
+
+    function like_image (id) {
+        if (id == null)
+            id = current_image_id;
+    
+        // like_link = document.getElementById("like_"+id);
+        // like_link.style.display = "none";
+        
+        fetch("/gallery/"+id, {
+            method: 'post',
+            headers: {'Content-Type': 'application/json'},
+            body: ""
+        })
+        .then(function(response) {
+            if (response.ok)
+                console.log ("you liked image "+id);
+        });
+        next_image ();
+    }
+
+    function prev_image () {
+        current_image_index = current_image_index - 1;
+        if (current_image_index < 0)
+            current_image_index = image_list.length-1;
+        next_image_id = image_list[current_image_index];
+        update_image_dialog (next_image_id);
+    }
+
+    function next_image () {
+        current_image_index = current_image_index + 1;
+        if (current_image_index >= image_list.length)
+            current_image_index = 0;
+        next_image_id = image_list[current_image_index];
+        update_image_dialog (next_image_id);
+    }
+
+    function update_image_dialog (id) {
+        current_image_id = id;
+        current_image_index = image_list.indexOf(current_image_id);
+        image_canvas = document.getElementById("image_canvas");
+        image_canvas.src = "/gallery/"+id;
+    }   
+
+    function present_image_dialog (id) {
+        update_image_dialog (id);
+
+        var modal = document.querySelector('.present_image_dialog') 
+        modal.classList.toggle('is-active');
+    }
+
+    function close_modal_dialog () {
+        var modal = document.querySelector('.present_image_dialog') 
+        modal.classList.toggle('is-active');
+    }
+
+
+    function download_image () {
+        var element = document.createElement('a');
+        element.setAttribute('href', '/gallery/'+current_image_id);
+        element.setAttribute('download', "kunstkam.jpg");
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    }
+
+    function share_image () {
+        if (navigator.share) {
+            navigator.share({
+                title: 'Kunst ist toll!',
+                url: 'https://kunstkam.de/gallery?present='+current_image_id,
+                text: 'Schau Dir mal das schöne Bild an, das ich auf kunstkam.de gefunden habe!'
+                }).then(() => {
+                console.log('Danke!');
+            })
+            .catch(console.error);
+        }
+    }
+
+    function delete_image (id) {
+        fetch("/gallery/"+id, {
+            method: 'delete',
+            headers: {'Content-Type': 'application/json'},
+            body: ""
+        })
+        .then(function(response) {
+            if (response.ok) {
+                console.log ("delete request for image "+id+" was OK");
+                location.reload();
+            }
+            else
+                console.log ("delete request for image "+id+" FAILED");
+        });
+    }    
+
+    if (!navigator.share) {
+        share_button = document.getElementById("share_button");
+        share_button.style.display = "None";
+    }    
+        
+    function getUrlParameter(name) {
+        name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+        var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+        var results = regex.exec(location.search);
+        return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+    };
+
+    image_id = getUrlParameter('present');
+    if (image_id != "")
+        present_image_dialog (image_id);
+
+</script>
+
+{% endblock %}

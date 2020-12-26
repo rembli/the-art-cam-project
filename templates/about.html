@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br>
+
+<div class="columns is-multiline is-desktop">
+
+<div class="column is-one-half">
+
+    <img src="{{ url_for('static', filename='img/top-1.jpg') }}" style="box-shadow: 5px 5px 5px #888; width:80%"><br><br>
+    <img src="{{ url_for('static', filename='img/top-2.jpg') }}" style="box-shadow: 5px 5px 5px #888; width:80%"><br><br>
+    <!--
+    <img src="{{ url_for('static', filename='img/top-3.jpg') }}" style="box-shadow: 5px 5px 5px #888; width:80%"><br><br>
+    -->
+</div>
+
+<div class="column is-one-half">
+    <div style="text-align:left;color:black;background-color:white;opacity:0.6;padding:20px">
+    Viele begeistern sich für Kunst.  Kinder leben Kunst ungezwungen und intensiv aus. Jedes Kind ist ein Künstler.
+    Je älter man wird, umso mehr mag einem der Glaube abhanden kommen, selber künstlerisch tätig sein zu können.
+    <br><br>
+    Beruflich beschäftige ich mich intensiv mit aktuellen Technologien.
+    Aber ich wollte auch abseits des beruflichen Alltags etwas schaffen, was Freude bereitet.
+    Daher entstand der Gedanke, Kunst mit moderner Technologie zusammmen zu bringen.
+    Aber warum es dabei belassen? Kann Kunst in der Digitalen Zeit nicht auch "gemeinsam" geschaffen werden?
+    <br><br>
+    <b>kunst kam</b> ist eine Initiative von <br><br>
+    <img src="{{ url_for('static', filename='img/gee.jpg') }}" width="350"><br><br>
+    gee+friends ist der Versuch, Kunst in der Digitalen Welt gemeinsam zu gestalten.
+    <b>kunst kam</b> ist ein Anfang. Aber jeder Weg beginnt mit dem ersten Schritt.
+</div>
+
+</div>
+
+</div>
+
+{% endblock %}

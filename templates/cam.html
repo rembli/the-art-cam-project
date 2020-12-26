@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+
+            let is_realtime_video = false;
+
+            let master_frame = document.querySelector("#master_frame");
+            let loading_frame = document.querySelector("#loading_frame");
+
+            let image_frame = document.querySelector("#image_frame");
+            let video = document.querySelector("#videoElement");
+            let canvas = document.querySelector("#canvasElement");
+            let ctx = canvas.getContext('2d');
+
+            let canvas2 = document.querySelector("#canvas2Element");
+            let ctx2 = canvas2.getContext('2d');
+
+            let camButton = document.querySelector("#camButtonElement");
+            let snapButton = document.querySelector("#snapButtonElement");
+            let startButton = document.querySelector("#startButtonElement");
+            let shareButton = document.querySelector("#shareButtonElement");
+
+            let cameras = [];
+            let cameras_selected = 0;
+            let currentStream;
+
+            let send_images_interval = null;
+
+            function gotDevices(mediaDevices) {
+                cameras = [];
+                mediaDevices.forEach(mediaDevice => {
+                    if (mediaDevice.kind === 'videoinput') {
+                        cameras.push (mediaDevice.deviceId);
+                    }
+                });
+
+            }    
+            navigator.mediaDevices.enumerateDevices().then(gotDevices);              
+
+            function stopMediaTracks(stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+        
+            function startCapture() {
+                image_frame.style.backgroundImage = "url('{{ url_for('static', filename='img/frame.jpg') }}')";
+
+                const videoConstraints = {};
+                videoConstraints.deviceId = cameras[cameras_selected];
+
+                const constraints = {
+                    video: videoConstraints,
+                    audio: false
+                };
+
+                navigator.mediaDevices
+                    .getUserMedia(constraints)
+                    .then(stream => {
+                        currentStream = stream;
+                        video.srcObject = stream;
+                        /* GPU notwendig für on-demand konvertierung --> zu teuer video on demand zu convertieren 
+                        */
+                        if (is_realtime_video) {                    
+                            send_images_interval = setInterval(function () {
+                                sendSnapshot();
+                            }, 250);
+                        }
+                        return navigator.mediaDevices.enumerateDevices();
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            } 
+
+            function stopCapture () {
+                if (typeof currentStream !== 'undefined') {
+                    stopMediaTracks(currentStream);
+                }
+                clearInterval (send_images_interval);
+            }
+
+            camButton.addEventListener('click', event => {
+                if (typeof currentStream !== 'undefined') {
+                    stopMediaTracks(currentStream);
+                }
+                if (cameras_selected < cameras.length) 
+                    cameras_selected = cameras_selected + 1;
+                else
+                    cameras_selected = 0;   
+                startCapture ();             
+            });
+
+            startButton.addEventListener('click', event => {
+                if (is_realtime_video) {
+                    video.style.display = "inline";
+                    video.style.width = "50px";
+                    video.style.height = "50px";
+                    canvas2.style.display = "inline";
+                }
+                else {
+                    video.style.display = "inline";
+                    canvas2.style.display = "none";
+                }
+                snapButton.style.display = "inline";
+                camButton.style.display = "inline";
+                startButton.style.display = "none";
+                shareButton.style.display = "none";
+                uploadFileButton.style.display = "inline";
+                
+                startCapture ();
+            });         
+
+            snapButton.addEventListener('click', event => {
+                sendSnapshot();
+                stopCapture ();
+                showLoading ();
+            });
+
+            shareButton.addEventListener('click', event => {
+                shareSnapshot ();
+                window.open ("/gallery","_self");
+            });                
+
+            function showLoading () {
+                loading_frame.style.display = "inline";
+                master_frame.style.display = "none";
+                snapButton.style.display = "none";
+                camButton.style.display = "none";
+                startButton.style.display = "none";
+                shareButton.style.display = "none";
+                uploadFileButton.style.display = "none";
+            }
+
+            // https://javascript.info/websocket 
+
+            let namespace = "/ws";
+
+            console.log ("Trying to connect ...");
+            socket_uri = document.domain + ":" + location.port + namespace;
+            if (location.protocol != 'https:') 
+                socket_uri = "ws://" + socket_uri
+            else
+                socket_uri = "wss://" + socket_uri
+            var socket = new WebSocket(socket_uri);
+
+            // open connection
+            
+            socket.onopen = function (e) {
+                console.log('[open] Connected!');
+            }
+            
+            // send images from camera
+        
+            function sendSnapshot() {
+                if (!currentStream) {
+                    return;
+                }
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);                
+                
+                let dataURL = canvas.toDataURL('image/jpeg');
+
+                data = JSON.stringify ({
+                    operation: "CONVERT",
+                    payload: dataURL
+                })
+
+                socket.send(data);
+                console.log(`[message] Data sent to server`);
+            }    
+
+            // select image from file and send
+
+            fileUpload.addEventListener('change', event => {
+                stopCapture ();
+                showLoading ();
+
+                var img = document.getElementById('fileUploadedImage');
+                img.style.display = "inline";
+                img.src = URL.createObjectURL(event.target.files[0]);
+                img.onload = () => {
+                    w = img.offsetWidth;
+                    h = img.offsetHeight;
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    img.style.display = "none";
+
+                    let dataURL = canvas.toDataURL('image/jpeg');
+                    data = JSON.stringify ({
+                        operation: "CONVERT",
+                        payload: dataURL
+                    })
+                    socket.send(data);
+                }
+            });
+
+            // upload image
+
+            function shareSnapshot() {
+                let dataURL = canvas2.toDataURL('image/jpeg');
+
+                data = JSON.stringify ({
+                    operation: "SHARE",
+                    payload: dataURL,
+                    ip: ip
+                });
+
+                socket.send(data);
+                console.log(`[message] Data sent to server`);               
+            }              
+
+            // get images from server
+
+            socket.onmessage = function(event) {
+                console.log('[message] Data received from server:');
+                canvas2.renderImage(event.data);
+
+                hideMessage();
+                loading_frame.style.display = "none";
+                master_frame.style.display = "inline";                
+                video.style.display = "none";
+                canvas2.style.display = "inline";
+                snapButton.style.display = "none";
+                camButton.style.display = "none";
+                startButton.style.display = "inline";
+                shareButton.style.display = "inline";
+                uploadFileButton.style.display = "inline";
+            };
+
+            // closed connection
+
+            socket.onclose = function(event) {
+                if (event.wasClean) {
+                    alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+                } else {
+                    alert('Leider hat was nicht geklappt. Entweder die Seite nochmal neu laden oder mit dem Handy probieren.');
+                    // window.location.reload();
+                }
+            }; 
+
+            // render new images from server
+
+            HTMLCanvasElement.prototype.renderImage = function(blob){
+                var img = new Image();
+                img.onload = function(){
+                    w = img.width;
+                    h = img.height;
+                    canvas2.width = w;
+                    canvas2.height = h;
+                    ctx2.drawImage(img,0,0,w,h);
+                }
+                img.src = URL.createObjectURL(blob);
+            };
+
+            // startCapture ();
+    });   
+</script>
+
+<style>
+    .outer_frame {
+        background-image: url('{{ url_for('static', filename='img/frame_with_info.jpg') }}');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        position: relative;
+        padding-bottom:100%;
+        width: 100%; 
+        box-shadow: 5px 5px 5px #888;
+    }  
+    .inner_frame {
+        position: absolute;  
+        top: 12%; 
+        left: 11%; 
+        width: 77%; 
+        height: 77%; 
+    }      
+
+    .box_shadow {
+        box-shadow: 5px 5px 5px #888;
+    }   
+</style>
+
+<br><br><br><br>
+<div class="columns is-centered is-desktop" >
+<div id="master_frame" class="column is-half">
+    <canvas class="video_frame" id="canvasElement" style="display:none"></canvas>
+    <div class="outer_frame" id="image_frame">
+        <canvas class="inner_frame" id="canvas2Element"></canvas>
+        <video class="inner_frame" id="videoElement" autoplay="" muted="" playsinline="" style="display:none"></video>
+    </div>
+</div>
+<div id="loading_frame" class="column is-half" style="display:none">
+    <img src="{{ url_for('static', filename='img/loading.gif') }}">
+</div>
+</div>
+
+<button id="startButtonElement" class="button box_shadow" style="height:60px"><i class="fas fa-play-circle fa-2x"></i></button>
+<button id="snapButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-stop-circle fa-2x"></i></button>
+<button id="camButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-video fa-2x"></i></button>
+<button id="uploadFileButton" class="button box_shadow" onclick="javascript:document.getElementById('fileUpload').click();" style="height:60px"><i class="fas fa-folder-open fa-2x"></i></button>
+<button id="shareButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-upload fa-2x"></i></button>
+
+<input type="file"  accept="image/*" name="image" id="fileUpload" style="display: none;">
+<img id="fileUploadedImage"/>
+
+<br><br>
+<u><a href="/gallery">Abbrechen</a></u>
+<br><br>
+
+{% endblock %}

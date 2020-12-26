@@ -1,0 +1,12 @@
+DEV_HOSTS:
+  - "DESKTOP-3F5TDPS"
+  - "localhost"
+
+DEV:
+  MONGO_URI: "mongodb://localhost:27017/art"
+
+  
+PRD:
+  MONGO_URI: "mongodb://admin:z4nzVa7XXh@192.168.2.248:27017/art?authSource=admin"
+  
+

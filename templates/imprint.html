@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<br><br><br><br>
+<div class="columns is-multiline is-desktop">
+
+<div class="column is-one-half" style="text-align:left;color:black;background-color:white;opacity:0.6">
+
+    <b>Impressum</b>
+    <br><br>
+    <img src="{{ url_for('static', filename='img/gee.jpg') }}" width="250"><br>
+    Georg Bögerl<br>
+    Im Tal 9<br>
+    92318 Neumarkt i.d.Opf.<br>
+    <br>
+    <i class="fa fa-envelope"></i> <a href="mailto:info@kunstkam.de">info@kunstkam.de</a><br>
+    <i class="fas fa-globe"></i> <a href="http://kunstkam.de">kunstkam.de</a><br>
+    <br>
+
+    <b>Urheberrecht und Linkhaftung</b>
+    <br><br>
+    Wir schließen jegliche Haftung - insbesondere für eventuelle Schäden oder Konsequenzen, die durch die Nutzung der auf diesem Server dargestellten Inhalte entstehen - aus.  Es kann auch keine Haftung dafür übernommen werden, dass diese Daten frei von Rechten Dritter sind.
+    <br><br>
+    Wir haben keinen Einfluss auf die Inhalte externer Webseiten. Aus dieser Website hinausführende Hyperlinks wurden nach Ansicht der verlinkten Seiten erstellt. Allerdings unterliegen Webseiten häufigen Veränderungen. Sollte deshalb ein externer Link nicht funktionieren oder nicht zum angegebenen Ziel führen, teilen Sie uns das bitte mit - wir korrigieren etwaige Fehler gerne. Sollten Sie Grund zur Beanstandung über Inhalte auf einer verlinkten Seite haben, setzen sie sich bitte mit dem Betreiber dieser Seite in Verbindung.
+    <br><br>
+    Der gesamte Inhalt dieses Servers unterliegt dem Urheberrecht, insbesondere alle Grafiken, Fotos, Buttons und sonstigen Gestaltungselemente.
+
+</div>
+
+</div>
+
+{% endblock %}
