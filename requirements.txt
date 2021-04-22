@@ -9,5 +9,6 @@ Quart_CORS==0.4.0
 opencv_python==4.0.0.21
 torch==1.7.0
 Flask_PyMongo==2.3.0
+# MongoDBProxy-official==0.1.0
 Pillow==8.0.1
 PyYAML==5.3.1

@@ -28,6 +28,7 @@ RUN pip3 install Quart_CORS==0.1.3
 RUN pip3 install PyYAML==5.3.1
 RUN pip3 install pymongo==3.8.0
 RUN pip3 install Flask_PyMongo==2.3.0
+# RUN pip3 install MongoDBProxy-official==0.1.0
 
 # install app
 COPY . .

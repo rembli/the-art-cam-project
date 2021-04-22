@@ -12,6 +12,7 @@ import base64
 import binascii
 from io import BytesIO
 import threading
+import functools
 
 # Quart and Quart web socket library
 from quart import Quart, render_template, Response, request, redirect, url_for
@@ -39,13 +40,14 @@ import os, yaml, socket
 import json
 import pymongo
 from flask_pymongo import PyMongo
+from pymongo.errors import AutoReconnect, PyMongoError
 from bson.objectid import ObjectId
 import base64
 from bson.json_util import dumps
 
 
 ####################################################################################
-# UTILITY FUNCTIONS FOR IMAGE PROCESSING OVER THE NETWORK
+# UTILITY FUNCTIONS 
 ####################################################################################
 
 def base64_to_pil_image(base64_img):
@@ -77,6 +79,35 @@ def get_remote_addr (request):
 def accept_json (request):
     return request.headers.get("accept") == "application/json"
 
+def print_warning(msg):
+  sys.stdout.write('%-15s%s\n' % ('WARN:', msg))
+
+
+def mongo_retry(func, max_retry=5, delay_secs=2):
+  """
+  Retry decorator for mongodb operations.
+  This decorator function allows for retry attempts against a given database
+  operation. The purpose is cover situations where the replica set is in a
+  state of transition. In the event that an operation is performed against the
+  db while the replica set is re-electing a new primary, this function will
+  sleep and retry.
+  Args:
+    max_retry: Maximum number of times to retry a database operation.
+    delay_secs: Seconds to wait in between retry attempts.
+  """
+  def db_op_wrapper(*args, **kwargs):
+    count = 0
+    while count < max_retry:
+      try:
+        return func(*args, **kwargs)
+      except AutoReconnect:
+        print_warning('Op failed to complete...retrying')
+        count += 1
+        time.sleep(delay_secs)
+      except PyMongoError as err:
+        return False, str(err)
+    return False, str('Op failed after too many retries')
+  return db_op_wrapper
 
 ####################################################################################
 # LOAD AND COMPILE MODEL
@@ -180,7 +211,7 @@ camera = Camera()
 # CONNNECT TO MONGO
 
 app.config['MONGO_URI'] = os.getenv('MONGO_URI')
-mongo = PyMongo(app)
+mongo = PyMongo(app, retryWrites = True)
 db = mongo.db
 
 # HTML TEMPLATES
@@ -190,6 +221,7 @@ async def index():
     return await render_template('index.html')
 
 
+@mongo_retry
 @app.route('/ip')
 async def ip():
     ip = get_remote_addr(request)
@@ -212,6 +244,7 @@ async def cam():
     return await render_template('cam.html')
 
 
+@mongo_retry
 @app.route('/gallery')
 async def gallery():
     projection = {"_id": 1, "created_on": 1, "likes": 1, "ip": 1}
@@ -222,12 +255,14 @@ async def gallery():
     return await render_template('gallery.html', images_top=images_top, images_new=images_new)
 
 
+@mongo_retry
 @app.route('/friends')
 async def friends():
     guestbook = db.guestbook.find().limit(7).sort([("created_on", pymongo.DESCENDING)])
     return await render_template('friends.html', guestbook=guestbook)
 
 
+@mongo_retry
 @app.route('/guestbook', methods=['POST'])
 async def guestbook():
     current_time = datetime.datetime.now() 
@@ -244,6 +279,7 @@ async def guestbook():
 
     return redirect(url_for('friends'))
 
+@mongo_retry
 @app.route('/guestbook/<post_id>', methods=['DELETE'])
 async def guestbook_delete_entry(post_id):
     ip = get_remote_addr(request)
@@ -252,6 +288,7 @@ async def guestbook_delete_entry(post_id):
 
 # APIS
 
+@mongo_retry
 @app.route('/gallery/<image_id>')
 async def gallery_image(image_id):
     pic = db.pics.find_one({'_id': ObjectId(image_id)})
@@ -259,13 +296,15 @@ async def gallery_image(image_id):
 
 
 @app.route('/gallery/<image_id>', methods=['POST'])
+
+@mongo_retry
 async def gallery_image_like(image_id):
     db.pics.find_one_and_update(
         {"_id" : ObjectId(image_id)},
         {"$inc": {"likes": 1}})
     return "LIKED"
 
-
+@mongo_retry
 @app.route('/gallery/<image_id>', methods=['DELETE'])
 async def gallery_image_delete(image_id):
     ip = get_remote_addr(request)
