@@ -11,7 +11,6 @@
         if (window.location.hostname != "127.0.0.1" && window.location.protocol != "https:") {
             window.location.replace(`https:${location.href.substring(location.protocol.length)}`);
         }
-
         ip = window.localStorage.getItem('ip');
 
         function update_ip() {
@@ -26,10 +25,10 @@
                 ip = text;
                 window.localStorage.setItem('ip', ip);
                 return text;
-                //alert (ip)
+                alert (ip)
             })
             .catch(function(err) {
-                // alert (err);
+                alert (err);
             });
         }
         update_ip ();
@@ -90,7 +89,7 @@
 
         <footer class="hero-footer has-text-centered" style="height:75px;background-color:#d8bdb6;color:#444">
              <br>
-             <a href="/imprint">kunst von <img src="{{ url_for('static', filename='img/gee.png') }}" width="75"> impressum</a>       
+             <a href="/imprint">kunst von <img src="{{ url_for('static', filename='img/gee.png') }}" width="75"> impressum</a>   
         </footer>
     </div>
 </body>

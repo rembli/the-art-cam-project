@@ -41,6 +41,7 @@ import pymongo
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 import base64
+from bson.json_util import dumps
 
 
 ####################################################################################
@@ -64,11 +65,17 @@ def cv2_to_pil_image(cv2_image):
 
 def get_remote_addr (request):
     ip = None
-    if request.headers.getlist("X-Real-IP"):
+    
+    if request.headers.getlist("X-Forwarded-For"):
+        ip = request.headers.getlist("X-Forwarded-For")[0]
+    elif request.headers.getlist("X-Real-IP"):
         ip = request.headers.getlist("X-Real-IP")[0]
     else:
-        ip = request.remote_addr
-    return ip
+        ip = request.remote_addr        
+    return str(ip)
+
+def accept_json (request):
+    return request.headers.get("accept") == "application/json"
 
 
 ####################################################################################
@@ -77,13 +84,13 @@ def get_remote_addr (request):
 
 size = 640,640
 transform = style_transform()
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # ohne gpu ist video streaming zu langsam
-# device = torch.device("cpu")
+device = torch.device("cpu")
 
 # Define model and load model checkpoint
 transformer = TransformerNet().to(device)
-transformer.load_state_dict(torch.load("models/_active_model.pth"))
+transformer.load_state_dict(torch.load("models/_active_model.pth",map_location='cpu'))
 transformer.eval()
 
 
@@ -170,23 +177,9 @@ app = cors(app, allow_origin="*")
 
 camera = Camera()
 
-# load the config.yml file
-
-cwd = os.path.dirname(os.path.realpath(__file__))
-config_path = os.path.join (cwd, "config.yml")
-with open(config_path, 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
-
-# Decide on environment depending on the current host that we get from a socket connection
-
-ACTIVE_CONFIG = "PRD"
-host_name = socket.gethostname() 
-if host_name in cfg["DEV_HOSTS"]:
-    ACTIVE_CONFIG = "DEV"
-
 # CONNNECT TO MONGO
 
-app.config['MONGO_URI'] = cfg[ACTIVE_CONFIG]["MONGO_URI"]
+app.config['MONGO_URI'] = os.getenv('MONGO_URI')
 mongo = PyMongo(app)
 db = mongo.db
 
@@ -221,8 +214,11 @@ async def cam():
 
 @app.route('/gallery')
 async def gallery():
-    images_top = db.pics.find().limit(3).sort([("likes", pymongo.DESCENDING)])
-    images_new = db.pics.find().limit(500).sort([("created_on", pymongo.DESCENDING)])
+    projection = {"_id": 1, "created_on": 1, "likes": 1, "ip": 1}
+    images_top = db.pics.find(projection=projection).limit(3).sort([("likes", pymongo.DESCENDING)])
+    images_new = db.pics.find(projection=projection).limit(500).sort([("created_on", pymongo.DESCENDING)])
+    if accept_json (request):
+        return dumps(images_new)
     return await render_template('gallery.html', images_top=images_top, images_new=images_new)
 
 

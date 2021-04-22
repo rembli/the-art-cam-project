@@ -3,8 +3,9 @@ torchvision==0.8.1
 av==8.0.2
 tqdm==4.44.1
 pymongo==3.8.0
-Quart==0.13.1
-Quart_CORS==0.2.0
+Hypercorn==0.11.2
+Quart==0.14.0
+Quart_CORS==0.4.0
 opencv_python==4.0.0.21
 torch==1.7.0
 Flask_PyMongo==2.3.0

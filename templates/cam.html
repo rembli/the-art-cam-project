@@ -38,7 +38,6 @@
                         cameras.push (mediaDevice.deviceId);
                     }
                 });
-
             }    
             navigator.mediaDevices.enumerateDevices().then(gotDevices);              
 
@@ -303,11 +302,12 @@
 </div>
 </div>
 
+
+<button id="camButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-video fa-2x"></i></button>
 <button id="startButtonElement" class="button box_shadow" style="height:60px"><i class="fas fa-play-circle fa-2x"></i></button>
 <button id="snapButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-stop-circle fa-2x"></i></button>
-<button id="camButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-video fa-2x"></i></button>
-<button id="uploadFileButton" class="button box_shadow" onclick="javascript:document.getElementById('fileUpload').click();" style="height:60px"><i class="fas fa-folder-open fa-2x"></i></button>
 <button id="shareButtonElement" class="button box_shadow" style="display:None;height:60px"><i class="fas fa-upload fa-2x"></i></button>
+<button id="uploadFileButton" class="button box_shadow" onclick="javascript:document.getElementById('fileUpload').click();" style="height:60px"><i class="fas fa-folder-open fa-2x"></i></button>
 
 <input type="file"  accept="image/*" name="image" id="fileUpload" style="display: none;">
 <img id="fileUploadedImage"/>

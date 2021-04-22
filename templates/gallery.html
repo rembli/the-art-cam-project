@@ -102,7 +102,7 @@
             <script language="javascript">
                 image_list.push ("{{ image._id }}");
                 if (ip == "{{ image.ip }}") 
-                    document.write ("<a href='javascript:delete_image (&quot;{{ image._id }}&quot;)''><i class='fas fa-trash'></i></a>");
+                    document.write ("<a href='javascript:delete_image (&quot;{{ image._id }}&quot;)''><i class='fas fa-trash' alt='{{ image.ip }}'></i></a>");
             </script>      
         </div>
     {% endfor %}
