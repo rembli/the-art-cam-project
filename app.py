@@ -68,6 +68,7 @@ def cv2_to_pil_image(cv2_image):
 def get_remote_addr (request):
     ip = None
     
+    # to cover scenarios w/ load balancer
     if request.headers.getlist("X-Forwarded-For"):
         ip = request.headers.getlist("X-Forwarded-For")[0]
     elif request.headers.getlist("X-Real-IP"):
@@ -214,19 +215,11 @@ app.config['MONGO_URI'] = os.getenv('MONGO_URI')
 mongo = PyMongo(app, retryWrites = True)
 db = mongo.db
 
-# HTML TEMPLATES
+# HTML TEMPLATES STATIC
 
 @app.route('/')
 async def index():
     return await render_template('index.html')
-
-
-@mongo_retry
-@app.route('/ip')
-async def ip():
-    ip = get_remote_addr(request)
-    db.ip.update_one ({ "ip": ip },{ "$set": { "ip": ip } },upsert=True)
-    return ip
 
 
 @app.route('/imprint')
@@ -243,6 +236,7 @@ async def about():
 async def cam():
     return await render_template('cam.html')
 
+# HTML TEMPLATES DYNAMIC
 
 @mongo_retry
 @app.route('/gallery')
@@ -289,20 +283,28 @@ async def guestbook_delete_entry(post_id):
 # APIS
 
 @mongo_retry
+@app.route('/ip')
+async def ip():
+    ip = get_remote_addr(request)
+    db.ip.update_one ({ "ip": ip },{ "$set": { "ip": ip } },upsert=True)
+    return ip
+
+
+@mongo_retry
 @app.route('/gallery/<image_id>')
 async def gallery_image(image_id):
     pic = db.pics.find_one({'_id': ObjectId(image_id)})
     return Response(binascii.a2b_base64(pic["image"]), mimetype='image/jpeg')
 
 
-@app.route('/gallery/<image_id>', methods=['POST'])
-
 @mongo_retry
+@app.route('/gallery/<image_id>', methods=['POST'])
 async def gallery_image_like(image_id):
     db.pics.find_one_and_update(
         {"_id" : ObjectId(image_id)},
         {"$inc": {"likes": 1}})
     return "LIKED"
+
 
 @mongo_retry
 @app.route('/gallery/<image_id>', methods=['DELETE'])
@@ -311,7 +313,7 @@ async def gallery_image_delete(image_id):
     db.pics.delete_one({'_id': ObjectId(image_id), "ip": ip })
     return "DELETED"
 
-# WEB SOCKET ENDPOINT TO RECEIVE AND SEND NEW IMAGES
+# WEB SOCKET ENDPOINT S
 
 @app.websocket('/ws')
 async def ws():
